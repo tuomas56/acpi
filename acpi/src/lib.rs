@@ -81,6 +81,58 @@ pub(crate) struct GenericAddress {
     address: u64,
 }
 
+/// This represents a power management profile, and the variants are
+/// as shown in section 5.2.9 of the spec.
+#[derive(Clone, Copy, Debug)]
+pub enum PowerManagementProfile {
+    Unspecified,
+    Desktop,
+    Mobile,
+    Workstation,
+    EnterpriseServer,
+    SOHOServer,
+    AppliancePC,
+    PerformanceServer,
+    Tablet,
+    Reserved(u8)
+}
+
+impl From<u8> for PowerManagementProfile {
+    fn from(val: u8) -> PowerManagementProfile {
+        use PowerManagementProfile::*;
+        match val {
+            0 => Unspecified,
+            1 => Desktop,
+            2 => Mobile,
+            3 => Workstation,
+            4 => EnterpriseServer,
+            5 => SOHOServer,
+            6 => AppliancePC,
+            7 => PerformanceServer,
+            8 => Tablet,
+            _ => Reserved(val)
+        }
+    }
+}
+
+impl From<PowerManagementProfile> for u8 {
+    fn from(profile: PowerManagementProfile) -> u8 {
+        use PowerManagementProfile::*;
+        match profile {
+            Unspecified => 0,
+            Desktop => 1,
+            Mobile => 2,
+            Workstation => 3,
+            EnterpriseServer => 4,
+            SOHOServer => 5,
+            AppliancePC => 6,
+            PerformanceServer => 7,
+            Tablet => 8,
+            Reserved(val) => val
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ProcessorState {
     /// A processor in this state is unusable, and you must not attempt to bring it up.
@@ -137,6 +189,8 @@ pub struct Acpi {
 
     /// The physical addresses of the SSDTs, if there are any,
     ssdt_addresses: Vec<usize>,
+
+    preferred_pm_profile: PowerManagementProfile
 }
 
 impl Acpi {
@@ -156,6 +210,11 @@ impl Acpi {
     /// The interrupt model supported by this system.
     pub fn interrupt_model<'a>(&'a self) -> &'a Option<InterruptModel> {
         &self.interrupt_model
+    }
+
+    /// The preferred power management profile of this system.
+    pub fn preferred_pm_profile(&self) -> PowerManagementProfile {
+        self.preferred_pm_profile
     }
 }
 
@@ -221,6 +280,7 @@ where
         hpet: None,
         dsdt_address: None,
         ssdt_addresses: Vec::with_capacity(0),
+        preferred_pm_profile: PowerManagementProfile::Unspecified
     };
 
     let header = sdt::peek_at_sdt_header(handler, physical_address);

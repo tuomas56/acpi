@@ -92,6 +92,8 @@ where
             .or(Some(fadt.dsdt_address as u64))
             .filter(|p| *p != 0)
             .map(|p| p as usize);
+
+        acpi.preferred_pm_profile = fadt.preferred_pm_profile.into();
     }
 
     Ok(())
